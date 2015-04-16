@@ -3,23 +3,26 @@
 angular.module('chatApp')
 .controller('SocketCtrl', function ($log, $scope, chatSocket, messageFormatter, nickName) {
   $scope.nickName = nickName;
-  $scope.messageLog = 'Ready to chat!';
-  $scope.sendMessage = function() {
-    var match = $scope.message.match('^\/nick (.*)');
+  $scope.messageLog = [{ts: new Date(), direction: 'receive', is_bot: true, username: 'chat-bot', body: 'WELCOME!' }];
+  $scope.chatMessage = '';
+  $scope.sendMessage = function(message) {
+    var match = message.match('^\/nick (.*)');
 
     if (angular.isDefined(match) && angular.isArray(match) && match.length === 2) {
       var oldNick = nickName;
       nickName = match[1];
-      $scope.message = '';
-      $scope.messageLog = messageFormatter(new Date(), 
-                      nickName, 'nickname changed - from ' + 
-                        oldNick + ' to ' + nickName + '!') + $scope.messageLog;
+      
+      $scope.messageLog.push({ts: new Date(), is_bot: true, direction: 'receive', username: 'chat-bot', body: 'nickname changed to ' + nickName });
       $scope.nickName = nickName;
+      $scope.chatMessage = '';
+      $scope.$broadcast('chat message received');
     }
-
-    $log.debug('sending message', $scope.message);
-    chatSocket.emit('message', nickName, $scope.message);
-    $scope.message = '';
+    else {
+    $log.debug('sending message', message);
+        chatSocket.emit('message', nickName, message);
+        $scope.chatMessage = '';
+    }
+    
   };
 
   $scope.$on('socket:broadcast', function(event, data) {
@@ -29,7 +32,9 @@ angular.module('chatApp')
       return;
     } 
     $scope.$apply(function() {
-      $scope.messageLog = $scope.messageLog + messageFormatter(new Date(), data.source, data.payload);
+      $scope.messageLog.push({ts: new Date(), is_bot: data.source === 'chat-bot', direction: data.source == $scope.nickName ? "sent" : "receive", username: data.source, body: data.payload });
+      $scope.$broadcast('chat message received');
     });
   });
+
 });

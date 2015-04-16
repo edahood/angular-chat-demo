@@ -22,7 +22,7 @@ module.exports = function (grunt) {
     yeoman: {
       // configurable paths
       app: require('./bower.json').appPath || 'app',
-      dist: '../public/'
+      dist: '.public/'
     },
 
     // Watches files for changes and runs tasks based on the changed files
@@ -120,7 +120,7 @@ module.exports = function (grunt) {
           dot: true,
           src: [
             '.tmp',
-            '<%= yeoman.dist %>/*',
+            '.public',
             '!<%= yeoman.dist %>/.git*'
           ]
         }]
@@ -147,7 +147,8 @@ module.exports = function (grunt) {
     bowerInstall: {
       app: {
         src: ['<%= yeoman.app %>/index.html'],
-        ignorePath: '<%= yeoman.app %>/'
+        ignorePath: '<%= yeoman.app %>/',
+        exclude: []
       }
     },
 
@@ -288,6 +289,18 @@ module.exports = function (grunt) {
         cwd: '<%= yeoman.app %>/styles',
         dest: '.tmp/styles/',
         src: '{,*/}*.css'
+      },
+      really: {
+        expand: true,
+        cwd: '<%= yeoman.dist %>',
+        dest: '../public',
+        src: '{,**/}*'
+      },
+      woff2: {
+        expand: true,
+        cwd: '<%= yeoman.app %>/bower_components/bootstrap/dist/fonts',
+        dest: '../public/fonts',
+        src: '*.*'
       }
     },
 
@@ -338,10 +351,20 @@ module.exports = function (grunt) {
         configFile: 'karma.conf.js',
         singleRun: true
       }
-    }
-  });
+    },
+    replace: {
+        bower_css: {
+          src: ['../public/styles/*.vendor.css'], // includes files in dir
+          overwrite: true, 
+          replacements: [{
+            from: '/bower_components/bootstrap/dist/fonts/',
+            to: '/fonts/'
+          }]
+        }
+      }
+    });
 
-
+  
   grunt.registerTask('serve', function (target) {
     if (target === 'dist') {
       return grunt.task.run(['build', 'connect:dist:keepalive']);
@@ -361,6 +384,7 @@ module.exports = function (grunt) {
     grunt.log.warn('The `server` task has been deprecated. Use `grunt serve` to start a server.');
     grunt.task.run(['serve:' + target]);
   });
+  grunt.registerTask('fixbootstrap', ['copy:really','copy:woff2']);
 
   grunt.registerTask('test', [
     'clean:server',
@@ -384,7 +408,9 @@ module.exports = function (grunt) {
     'uglify',
     'rev',
     'usemin',
-    'htmlmin'
+    'htmlmin',
+    'fixbootstrap',
+    'replace:bower_css'
   ]);
 
   grunt.registerTask('default', [

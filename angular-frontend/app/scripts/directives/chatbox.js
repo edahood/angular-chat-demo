@@ -2,14 +2,18 @@
     'use strict';
 
     angular.module('chatApp')
-    .directive('chatBox', function() {
+    .directive('chatBox', function($timeout) {
         return {
             restrict: 'E',
-            template: '<textarea style="width: 100%; height: 200px" ng-disable="true" ng-model="messageLog"></textarea>',
+            templateUrl: '/views/chatbox.html',
             controller: function($scope, $element) {
-                $scope.$watch('messageLog', function() {
-                  var textArea = $element[0].children[0];
-                  textArea.scrollTop = textArea.scrollHeight;
+                $scope.$on('chat message received', function() {
+                  $timeout(function(){
+                    var chatArea = $element.find("#chatBody");
+                    chatArea.scrollTop(900);
+                  }, 0);
+
+                  
                 });
             }
         };
